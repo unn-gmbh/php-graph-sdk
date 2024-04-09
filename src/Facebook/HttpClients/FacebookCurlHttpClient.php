@@ -75,8 +75,17 @@ class FacebookCurlHttpClient implements FacebookHttpClientInterface
             throw new FacebookSDKException($this->facebookCurl->error(), $curlErrorCode);
         }
 
-        // Separate the raw headers from the raw body
-        list($rawHeaders, $rawBody) = $this->extractResponseHeadersAndBody();
+        $rawHeaders = [];
+
+        foreach($this->responseHeaders as $headerKey => $headerArray) {
+            foreach($headerArray as $header) {
+               $rawHeaders[] = sprintf('%s: %s', $headerKey, $header); 
+            }
+        }
+
+        $rawHeaders = implode("\n", $rawHeaders);
+        $this->facebookCurl->getinfo(CURLINFO_HTTP_CODE);
+        $rawBody = $this->rawResponse;
 
         $this->closeConnection();
 
