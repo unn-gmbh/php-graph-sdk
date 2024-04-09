@@ -48,6 +48,8 @@ class FacebookCurlHttpClient implements FacebookHttpClientInterface
      */
     protected $rawResponse;
 
+    protected $responseHeaders;
+
     /**
      * @var FacebookCurl Procedural curl as object
      */
@@ -98,11 +100,21 @@ class FacebookCurlHttpClient implements FacebookHttpClientInterface
             CURLOPT_URL => $url,
             CURLOPT_CONNECTTIMEOUT => 10,
             CURLOPT_TIMEOUT => $timeOut,
-            CURLOPT_RETURNTRANSFER => true, // Return response as string
-            CURLOPT_HEADER => true, // Enable header processing
+            CURLOPT_RETURNTRANSFER => true, // Follow 301 redirects
             CURLOPT_SSL_VERIFYHOST => 2,
             CURLOPT_SSL_VERIFYPEER => true,
             CURLOPT_CAINFO => __DIR__ . '/certs/DigiCertHighAssuranceEVRootCA.pem',
+            CURLOPT_HEADERFUNCTION => function($curl, $header)
+            {
+              $len = strlen($header);
+              $header = explode(':', $header, 2);
+              if (count($header) < 2) // ignore invalid headers
+                return $len;
+          
+              $this->responseHeaders[strtolower(trim($header[0]))][] = trim($header[1]);
+              
+              return $len;
+            }
         ];
 
         if ($method !== "GET") {
